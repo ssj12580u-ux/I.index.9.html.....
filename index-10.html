@@ -1,0 +1,1819 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>جاجو | پیدا کردن و رزرو اقامتگاه</title>
+<!-- PWA -->
+<meta name="theme-color" content="#171522">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="جاجو">
+<meta name="description" content="پیدا کردن و رزرو آنلاین اقامتگاه‌ها و هتل‌ها">
+<link id="pwaManifestLink" rel="manifest" href="">
+<link id="pwaIconLink" rel="icon" type="image/png" sizes="192x192" href="">
+<link id="pwaAppleIconLink" rel="apple-touch-icon" href="">
+<script>
+/* ============================================================
+   PWA SELF-CONTAINED SETUP — بدون هیچ فایل بیرونی
+   (رفع باگ نصب: قبلاً manifest/آیکون‌ها/سرویس‌ورکر به فایل‌های
+   خارجی جداگانه اشاره می‌کردند که وجود نداشتند، پس مرورگر
+   برنامه را «قابل نصب» تشخیص نمی‌داد و فقط یک میان‌بر ساده
+   می‌ساخت. اینجا همه چیز داخل همین یک فایل HTML تولید می‌شود.)
+============================================================ */
+(function(){
+  function makeIcon(size){
+    var c = document.createElement('canvas');
+    c.width = size; c.height = size;
+    var ctx = c.getContext('2d');
+    var r = size*0.22;
+
+    // پس‌زمینه: گرادیان سرمه‌ای به سبز طاووسی (هویت اپ)
+    var bg = ctx.createLinearGradient(0,0,size,size);
+    bg.addColorStop(0,'#221d33');
+    bg.addColorStop(1,'#173634');
+    ctx.fillStyle = bg;
+    ctx.beginPath();
+    ctx.moveTo(r,0);
+    ctx.arcTo(size,0,size,size,r);
+    ctx.arcTo(size,size,0,size,r);
+    ctx.arcTo(0,size,0,0,r);
+    ctx.arcTo(0,0,size,0,r);
+    ctx.closePath();
+    ctx.fill();
+
+    // هاله‌ی نور طلایی پشت فانوس
+    var glow = ctx.createRadialGradient(size*0.5,size*0.52,size*0.05,size*0.5,size*0.52,size*0.42);
+    glow.addColorStop(0,'rgba(240,163,78,.55)');
+    glow.addColorStop(1,'rgba(240,163,78,0)');
+    ctx.fillStyle = glow;
+    ctx.beginPath();
+    ctx.arc(size*0.5,size*0.52,size*0.42,0,Math.PI*2);
+    ctx.fill();
+
+    var cx = size*0.5, top = size*0.20, w = size*0.30;
+
+    // دسته و سقف فانوس
+    ctx.strokeStyle = '#f0a34e';
+    ctx.lineWidth = size*0.018;
+    ctx.beginPath();
+    ctx.moveTo(cx, top-size*0.06);
+    ctx.lineTo(cx, top);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(cx-w*0.55, top+size*0.10);
+    ctx.lineTo(cx, top);
+    ctx.lineTo(cx+w*0.55, top+size*0.10);
+    ctx.stroke();
+
+    // بدنه‌ی فانوس (گرادیان طلایی)
+    var body = ctx.createLinearGradient(cx-w*0.6, top+size*0.1, cx+w*0.6, size*0.85);
+    body.addColorStop(0,'#f6c67a');
+    body.addColorStop(1,'#cf7a2e');
+    ctx.fillStyle = body;
+    ctx.strokeStyle = '#a85c1c';
+    ctx.lineWidth = size*0.016;
+    ctx.beginPath();
+    var bx1=cx-w*0.62, bx2=cx+w*0.62, by1=top+size*0.10, by2=size*0.72;
+    ctx.moveTo(bx1, by1+ (by2-by1)*0.18);
+    ctx.quadraticCurveTo(bx1-size*0.03, (by1+by2)/2, cx-w*0.28, by2);
+    ctx.quadraticCurveTo(cx, by2+size*0.09, cx+w*0.28, by2);
+    ctx.quadraticCurveTo(bx2+size*0.03, (by1+by2)/2, bx2, by1+(by2-by1)*0.18);
+    ctx.quadraticCurveTo(cx, by1-size*0.02, bx1, by1+(by2-by1)*0.18);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    // خطوط عمودی نمادین بدنه
+    ctx.strokeStyle = 'rgba(28,16,6,.35)';
+    ctx.lineWidth = size*0.014;
+    ctx.beginPath();
+    ctx.moveTo(cx-w*0.24, by1+size*0.05); ctx.lineTo(cx-w*0.24, by2-size*0.02);
+    ctx.moveTo(cx+w*0.24, by1+size*0.05); ctx.lineTo(cx+w*0.24, by2-size*0.02);
+    ctx.stroke();
+
+    return c.toDataURL('image/png');
+  }
+
+  var icon192 = makeIcon(192);
+  var icon512 = makeIcon(512);
+
+  document.getElementById('pwaIconLink').href = icon192;
+  document.getElementById('pwaAppleIconLink').href = icon192;
+  window.addEventListener('DOMContentLoaded', function(){
+    var ipImg = document.getElementById('ipIconImg');
+    if(ipImg) ipImg.src = icon192;
+  });
+
+  var manifest = {
+    name: 'جاجو | پیدا کردن و رزرو اقامتگاه',
+    short_name: 'جاجو',
+    description: 'پیدا کردن و رزرو آنلاین اقامتگاه‌ها و هتل‌ها',
+    start_url: location.href.split('#')[0],
+    scope: location.href.split('#')[0],
+    display: 'standalone',
+    orientation: 'portrait',
+    background_color: '#171522',
+    theme_color: '#171522',
+    dir: 'rtl',
+    lang: 'fa',
+    icons: [
+      { src: icon192, sizes: '192x192', type: 'image/png', purpose: 'any maskable' },
+      { src: icon512, sizes: '512x512', type: 'image/png', purpose: 'any maskable' }
+    ]
+  };
+  var manifestBlob = new Blob([JSON.stringify(manifest)], {type:'application/manifest+json'});
+  document.getElementById('pwaManifestLink').href = URL.createObjectURL(manifestBlob);
+  // توجه: سرویس‌ورکر عمداً از Blob ساخته نمی‌شود، چون مرورگرها
+  // ثبت سرویس‌ورکر از روی آدرس blob: را به‌دلایل امنیتی رد می‌کنند
+  // (اسکوپ آن از مبدأ حافظه‌ای قابل تعیین نیست). معیار نصب‌پذیری
+  // PWA در مرورگرهای امروزی (Chrome/Edge/Android) دیگر وجود
+  // سرویس‌ورکر را الزامی نمی‌کند؛ manifest معتبر + آیکون‌ها کافی است.
+})();
+</script>
+<script type="module">
+  // ============================================================
+  // اتصال به Firebase (Firestore) — پروژه: hotel-116db
+  // ============================================================
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
+  import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyBQd_C0D5w3OCQmGVvTM0eGIwNqcc6IB3c",
+    authDomain: "hotel-116db.firebaseapp.com",
+    projectId: "hotel-116db",
+    storageBucket: "hotel-116db.firebasestorage.app",
+    messagingSenderId: "193171578316",
+    appId: "1:193171578316:web:c0a39a2c6520f620915169"
+  };
+
+  const fbApp = initializeApp(firebaseConfig);
+  const firestore = getFirestore(fbApp);
+  // کل دیتابیس اپ (هتل‌ها، کاربران، رزروها) داخل یک سند واحد نگه داشته می‌شود:
+  // Collection: jaju  ->  Document: db
+  const dbDocRef = doc(firestore, "jaju", "db");
+
+  // خواندن آخرین نسخه‌ی داده از Firestore (اگر سندی وجود نداشته باشد null برمی‌گرداند)
+  window.__fbLoadDB = async function () {
+    try {
+      const snap = await getDoc(dbDocRef);
+      if (!snap.exists()) return null;
+      const data = snap.data();
+      return data && data.json ? JSON.parse(data.json) : null;
+    } catch (e) {
+      console.error("خطا در خواندن داده از Firebase:", e);
+      return null;
+    }
+  };
+
+  // ذخیره‌ی کل دیتابیس در Firestore (به‌صورت یک رشته‌ی JSON داخل فیلد json)
+  window.__fbSaveDB = async function (dbObj) {
+    try {
+      await setDoc(dbDocRef, { json: JSON.stringify(dbObj), updatedAt: Date.now() });
+    } catch (e) {
+      console.error("خطا در ذخیره‌ی داده در Firebase:", e);
+    }
+  };
+
+  window.__fbReady = true;
+  window.dispatchEvent(new Event("firebase-ready"));
+</script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800;900&display=swap');
+:root{
+  --ink:#1c1a24;
+  --night:#15121e;
+  --night-2:#221d33;
+  --card:#ffffff;
+  --paper:#f7f2ea;
+  --line:#e9e1d1;
+  --lantern:#cf7a2e;
+  --lantern-deep:#a85c1c;
+  --lantern-light:#f0a34e;
+  --gold:#dba53c;
+  --teal:#2c5e58;
+  --teal-deep:#173634;
+  --muted:#82788a;
+  --danger:#b23b3b;
+  --ok:#2f6b45;
+  --radius:18px;
+  --radius-sm:12px;
+  --shadow:0 12px 28px -14px rgba(21,18,30,.35);
+  --shadow-lg:0 20px 45px -18px rgba(21,18,30,.45);
+  --glow:0 0 0 4px rgba(207,122,46,.16);
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  font-family:'Vazirmatn','Segoe UI',Tahoma,sans-serif;
+  background:var(--paper);
+  background-image:radial-gradient(circle at 1px 1px, rgba(23,21,34,.05) 1px, transparent 0);
+  background-size:22px 22px;
+  color:var(--ink);
+  min-height:100vh;
+  -webkit-font-smoothing:antialiased;
+  position:relative;
+}
+.bg-blob{position:fixed;border-radius:50%;filter:blur(60px);z-index:0;pointer-events:none;opacity:.35;}
+.bg-blob.b1{width:260px;height:260px;top:-90px;right:-70px;background:radial-gradient(circle,var(--lantern-light),transparent 70%);}
+.bg-blob.b2{width:300px;height:300px;bottom:10%;left:-120px;background:radial-gradient(circle,var(--teal),transparent 70%);}
+.bg-blob.b3{width:220px;height:220px;bottom:-100px;right:-60px;background:radial-gradient(circle,var(--gold),transparent 70%);}
+#app{position:relative;z-index:1;}
+img{max-width:100%;display:block;}
+button{font-family:inherit;}
+input,select{font-family:inherit;}
+a{color:inherit;text-decoration:none;}
+::selection{background:var(--lantern);color:#fff;}
+
+/* ---------- App shell ---------- */
+#app{max-width:520px;margin:0 auto;min-height:100vh;background:var(--paper);position:relative;padding-bottom:86px;box-shadow:0 0 60px rgba(0,0,0,.06);}
+
+.topbar{
+  position:sticky;top:0;z-index:40;
+  background:linear-gradient(135deg,var(--night),var(--night-2) 120%);
+  color:#fff;
+  padding:15px 18px;
+  display:flex;align-items:center;justify-content:space-between;
+  box-shadow:var(--shadow);
+  border-bottom:1px solid rgba(255,255,255,.06);
+}
+.brand{display:flex;align-items:center;gap:9px;font-weight:800;font-size:20px;letter-spacing:.2px;}
+.brand-mark{display:flex;filter:drop-shadow(0 2px 5px rgba(207,122,46,.5));}
+.topbar .sub{font-size:11px;color:#b9b6c8;font-weight:400;margin-top:2px;}
+.user-chip{
+  font-size:12px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);
+  border-radius:999px;padding:6px 12px;display:flex;align-items:center;gap:6px;cursor:pointer;
+  transition:background .15s ease;
+}
+.user-chip:hover{background:rgba(255,255,255,.14);}
+
+.screen{display:none;padding:18px;animation:fade .3s ease;}
+.screen.active{display:block;}
+@keyframes fade{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
+
+/* ---------- Bottom nav ---------- */
+.bottom-nav{
+  position:fixed;bottom:0;left:50%;transform:translateX(50%);
+  width:100%;max-width:520px;
+  background:linear-gradient(135deg,var(--night),var(--night-2) 120%);
+  display:flex;justify-content:space-around;
+  padding:9px 6px calc(9px + env(safe-area-inset-bottom));
+  z-index:50;box-shadow:0 -10px 26px rgba(0,0,0,.22);
+  border-top:1px solid rgba(255,255,255,.06);
+}
+.nav-btn{
+  background:none;border:none;color:#8f8ba3;display:flex;flex-direction:column;align-items:center;
+  gap:3px;font-size:11px;padding:7px 10px;border-radius:12px;flex:1;cursor:pointer;
+  transition:color .15s ease,background .15s ease;
+}
+.nav-btn svg{width:20px;height:20px;stroke:#8f8ba3;fill:none;stroke-width:1.8;transition:stroke .15s ease;}
+.nav-btn.active{color:#fff;background:rgba(255,255,255,.06);}
+.nav-btn.active svg{stroke:var(--lantern-light);filter:drop-shadow(0 0 5px rgba(240,163,78,.5));}
+
+/* ---------- Typography ---------- */
+h1,h2,h3{margin:0;font-weight:800;letter-spacing:-.2px;}
+.page-title{font-size:23px;margin-bottom:4px;letter-spacing:-.3px;}
+.page-desc{color:var(--muted);font-size:13.5px;margin-bottom:20px;}
+.section-title{font-size:15.5px;font-weight:800;margin:24px 0 12px;display:flex;align-items:center;gap:7px;letter-spacing:-.1px;}
+.section-title .bar{width:4px;height:15px;background:linear-gradient(var(--lantern-light),var(--lantern));border-radius:3px;display:inline-block;}
+
+/* ---------- Search / Hero ---------- */
+.hero{
+  background:
+    radial-gradient(120% 90% at 8% -10%, rgba(219,165,60,.35), transparent 55%),
+    radial-gradient(90% 70% at 105% 115%, rgba(44,94,88,.55), transparent 60%),
+    linear-gradient(160deg,var(--teal-deep),var(--night) 78%);
+  border-radius:22px;
+  padding:30px 20px 26px;
+  color:#fff;position:relative;overflow:hidden;
+  margin-bottom:20px;
+  box-shadow:var(--shadow-lg);
+}
+.hero-pattern{position:absolute;inset:0;width:100%;height:100%;opacity:.6;z-index:0;}
+.hero::after{
+  content:"";position:absolute;left:-30px;bottom:-46px;width:180px;height:180px;border-radius:50%;
+  background:radial-gradient(circle,rgba(219,165,60,.45),transparent 70%);z-index:0;
+}
+.hero h1{font-size:22px;line-height:1.75;position:relative;z-index:1;font-weight:800;letter-spacing:-.2px;}
+.hero .accent{background:linear-gradient(90deg,var(--gold),var(--lantern-light));-webkit-background-clip:text;background-clip:text;color:transparent;}
+.hero p{color:#d3d0e0;font-size:12.5px;margin-top:8px;position:relative;z-index:1;}
+
+.search-card{
+  background:rgba(255,255,255,.86);backdrop-filter:blur(14px) saturate(1.4);
+  border:1px solid rgba(255,255,255,.6);border-radius:22px;
+  padding:16px;box-shadow:var(--shadow-lg),0 0 0 1px rgba(219,165,60,.12);margin-top:-38px;position:relative;z-index:2;
+}
+.search-card::before{
+  content:"";position:absolute;inset:-1px;border-radius:22px;padding:1px;z-index:-1;
+  background:linear-gradient(135deg,rgba(219,165,60,.55),rgba(44,94,88,.35),transparent 60%);
+  -webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);
+  -webkit-mask-composite:xor;mask-composite:exclude;
+}
+.field{margin-bottom:10px;}
+.field:last-child{margin-bottom:0;}
+.field label{font-size:12px;color:var(--muted);display:block;margin-bottom:5px;font-weight:600;}
+.field input,.field select{
+  width:100%;padding:11.5px 13px;border:1.5px solid var(--line);border-radius:var(--radius-sm);
+  font-size:14px;background:#fff;color:var(--ink);
+  transition:border-color .15s ease,box-shadow .15s ease;
+}
+.field input:focus,.field select:focus{outline:none;border-color:var(--teal);box-shadow:0 0 0 3px rgba(44,94,88,.12);}
+.row-2{display:flex;gap:10px;}
+.row-2 .field{flex:1;}
+
+.jalali-date-wrap{
+  display:flex;align-items:center;justify-content:space-between;gap:8px;cursor:pointer;
+  width:100%;padding:11.5px 13px;border:1.5px solid var(--line);border-radius:var(--radius-sm);
+  font-size:14px;background:#fff;color:var(--ink);transition:border-color .15s ease,box-shadow .15s ease;
+}
+.jalali-date-wrap:hover{border-color:var(--teal);}
+.jalali-date-wrap svg{color:var(--muted);flex-shrink:0;}
+.jalali-display{font-weight:600;}
+
+.jp-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+.jp-nav button{background:var(--paper);border:1px solid var(--line);width:34px;height:34px;border-radius:10px;font-size:18px;cursor:pointer;color:var(--ink);}
+.jp-nav button:hover{border-color:var(--teal);}
+.jp-title{font-weight:800;font-size:15px;}
+.jp-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:6px;}
+.jp-cell{
+  aspect-ratio:1;display:flex;align-items:center;justify-content:center;border:none;background:none;
+  border-radius:10px;font-size:13.5px;cursor:pointer;color:var(--ink);
+}
+.jp-cell:hover:not(.jp-empty):not(.jp-wd){background:var(--paper);}
+.jp-cell.jp-wd{color:var(--muted);font-size:11.5px;font-weight:700;cursor:default;}
+.jp-cell.jp-empty{cursor:default;}
+.jp-cell.jp-today{border:1.5px solid var(--lantern);}
+.jp-cell.jp-sel{background:linear-gradient(135deg,var(--lantern-light),var(--lantern));color:#fff;font-weight:800;}
+.jp-cell[disabled]{color:var(--line);cursor:not-allowed;}
+.jp-weekdays{margin-bottom:8px;}
+
+.btn{
+  position:relative;overflow:hidden;
+  display:inline-flex;align-items:center;justify-content:center;gap:6px;
+  padding:13px 18px;border-radius:var(--radius-sm);border:none;font-size:14.5px;font-weight:700;
+  cursor:pointer;transition:transform .12s ease,opacity .12s ease,box-shadow .15s ease;width:100%;
+  letter-spacing:.1px;
+}
+.btn::after{
+  content:"";position:absolute;inset:0;
+  background:linear-gradient(115deg,transparent 30%,rgba(255,255,255,.35) 48%,transparent 66%);
+  transform:translateX(-120%);transition:transform .6s ease;
+}
+.btn:hover::after{transform:translateX(120%);}
+.btn:active{transform:scale(.97);}
+.btn-primary{background:linear-gradient(135deg,var(--lantern-light),var(--lantern) 65%);color:#fff;box-shadow:0 12px 24px -10px rgba(207,122,46,.7);}
+.btn-primary:hover{box-shadow:0 14px 28px -8px rgba(207,122,46,.8);filter:brightness(1.04);}
+.btn-teal{background:linear-gradient(135deg,#3f7a72,var(--teal) 70%);color:#fff;box-shadow:0 12px 24px -10px rgba(44,94,88,.6);}
+.btn-outline{background:transparent;border:1.5px solid var(--line);color:var(--ink);}
+.btn-outline:hover{border-color:var(--teal);color:var(--teal);}
+.btn-ghost{background:rgba(0,0,0,.04);color:var(--ink);}
+.btn-danger{background:#fceaea;color:var(--danger);}
+.btn-sm{padding:8px 12px;font-size:12.5px;width:auto;}
+.btn[disabled]{opacity:.5;cursor:not-allowed;}
+
+/* ---------- Hotel cards ---------- */
+.hotel-card{
+  background:var(--card);border:1px solid var(--line);border-radius:20px;
+  overflow:hidden;margin-bottom:16px;box-shadow:var(--shadow);cursor:pointer;
+  transition:transform .22s cubic-bezier(.2,.8,.3,1),box-shadow .22s ease;
+  animation:cardIn .4s ease backwards;
+}
+@keyframes cardIn{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);}}
+.hotel-card:nth-child(1){animation-delay:.02s;}
+.hotel-card:nth-child(2){animation-delay:.08s;}
+.hotel-card:nth-child(3){animation-delay:.14s;}
+.hotel-card:nth-child(4){animation-delay:.2s;}
+.hotel-card:nth-child(n+5){animation-delay:.24s;}
+.hotel-card:hover{transform:translateY(-4px);box-shadow:var(--shadow-lg);}
+.hotel-card:hover .hotel-img img,.hotel-card:hover .hotel-img{transform:scale(1.06);}
+.hotel-card:active{transform:translateY(-1px) scale(.995);}
+.hotel-img{
+  height:130px;width:100%;position:relative;
+  display:flex;align-items:flex-end;
+  background-size:cover;background-position:center;
+}
+.hotel-img{
+  height:150px;width:100%;position:relative;
+  display:flex;align-items:flex-end;
+  background-size:cover;background-position:center;
+  transition:transform .35s ease;
+}
+.hotel-img-overlay{
+  position:absolute;inset:0;
+  background:linear-gradient(180deg,rgba(21,18,30,0) 45%,rgba(21,18,30,.55) 100%);
+}
+.hotel-tag{
+  position:absolute;top:10px;right:10px;background:rgba(21,18,30,.55);color:#fff;
+  font-size:11px;padding:4px 11px;border-radius:999px;font-weight:600;z-index:1;
+  backdrop-filter:blur(6px);border:1px solid rgba(255,255,255,.2);
+}
+.hotel-img{background-color:var(--night-2);}
+.hotel-body{padding:15px 16px;}
+.hotel-name{font-size:16.5px;font-weight:800;margin-bottom:3px;letter-spacing:-.1px;}
+.hotel-loc{font-size:12.5px;color:var(--muted);display:flex;align-items:center;gap:4px;margin-bottom:9px;}
+.hotel-foot{display:flex;justify-content:space-between;align-items:center;}
+.hotel-price{font-size:12px;color:var(--muted);background:#faf3ea;border:1px solid #f0e2cc;padding:6px 11px;border-radius:12px;}
+.hotel-price b{font-size:16.5px;color:var(--lantern-deep);font-weight:800;}
+
+/* ---------- Favorites / chips ---------- */
+.fav-btn{
+  position:absolute;top:10px;left:10px;z-index:2;width:32px;height:32px;border-radius:50%;
+  background:rgba(21,18,30,.5);border:1px solid rgba(255,255,255,.25);backdrop-filter:blur(6px);
+  display:flex;align-items:center;justify-content:center;cursor:pointer;color:#fff;
+  transition:background .15s ease,transform .15s ease;
+}
+.fav-btn svg{fill:none;stroke:#fff;stroke-width:1.8;transition:fill .15s ease,stroke .15s ease;}
+.fav-btn:active{transform:scale(.9);}
+.fav-btn.active{background:rgba(207,122,46,.25);}
+.fav-btn.active svg{fill:var(--lantern);stroke:var(--lantern-light);}
+.fav-btn.detail-fav{position:absolute;top:12px;left:12px;}
+.share-btn{
+  position:absolute;top:12px;left:56px;z-index:2;width:32px;height:32px;border-radius:50%;
+  background:rgba(21,18,30,.5);border:1px solid rgba(255,255,255,.25);backdrop-filter:blur(6px);
+  display:flex;align-items:center;justify-content:center;cursor:pointer;color:#fff;
+}
+.chip-row{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:9px;}
+.chip{font-size:11px;background:#eef3f2;color:var(--teal-deep);padding:4px 10px;border-radius:999px;font-weight:600;}
+.amenity-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.amenity-opt{
+  display:flex;align-items:center;gap:7px;font-size:13px;background:var(--paper);
+  border:1.5px solid var(--line);border-radius:var(--radius-sm);padding:9px 10px;cursor:pointer;
+}
+.amenity-opt input{accent-color:var(--lantern);}
+.empty-state{
+  text-align:center;padding:40px 16px;color:var(--muted);
+}
+.empty-state .ic{font-size:34px;margin-bottom:8px;}
+
+/* ---------- Detail ---------- */
+.detail-img{height:200px;border-radius:var(--radius);background-size:cover;background-position:center;margin-bottom:16px;box-shadow:var(--shadow-lg);position:relative;}
+.detail-name{font-size:22px;font-weight:800;}
+.detail-loc{color:var(--muted);font-size:13.5px;margin:4px 0 14px;display:flex;gap:5px;align-items:center;}
+.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;}
+.info-box{background:var(--card);border:1px solid var(--line);border-radius:var(--radius-sm);padding:13px;transition:border-color .15s ease;}
+.info-box:hover{border-color:var(--lantern);}
+.info-box .lbl{font-size:11px;color:var(--muted);margin-bottom:4px;}
+.info-box .val{font-size:14.5px;font-weight:700;}
+.desc-box{background:var(--card);border:1px solid var(--line);border-radius:var(--radius-sm);padding:14px;font-size:13.5px;line-height:2;color:#48465a;margin-bottom:16px;}
+.contact-box{
+  display:flex;align-items:center;justify-content:space-between;
+  background:linear-gradient(135deg,var(--teal),var(--teal-deep) 130%);color:#fff;border-radius:var(--radius-sm);padding:14px 15px;margin-bottom:16px;
+  box-shadow:0 10px 22px -12px rgba(23,54,52,.6);
+}
+.contact-box .lbl{font-size:11.5px;color:#cfe4e1;}
+.contact-box .val{font-size:16.5px;font-weight:800;letter-spacing:.5px;}
+
+.book-box{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:17px;box-shadow:var(--shadow-lg);}
+.price-summary{display:flex;justify-content:space-between;align-items:center;padding-top:12px;margin-top:12px;border-top:1px dashed var(--line);}
+.price-summary .total{font-size:20px;font-weight:800;color:var(--lantern-deep);}
+.price-summary .nights{font-size:12px;color:var(--muted);}
+
+/* ---------- Reservation card ---------- */
+.res-card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:15px;margin-bottom:12px;box-shadow:var(--shadow);border-right:3px solid var(--lantern);transition:box-shadow .15s ease;}
+.res-card:hover{box-shadow:var(--shadow-lg);}
+.res-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;}
+.res-hotel{font-weight:800;font-size:15.5px;}
+.status{font-size:11px;padding:4px 11px;border-radius:999px;font-weight:700;}
+.status.confirmed{background:#e7f4ea;color:var(--ok);}
+.status.cancelled{background:#fceaea;color:var(--danger);}
+.res-dates{display:flex;gap:14px;font-size:12.5px;color:var(--muted);margin-bottom:10px;}
+.res-dates b{color:var(--ink);}
+.res-foot{display:flex;justify-content:space-between;align-items:center;}
+.res-price{font-weight:800;color:var(--lantern-deep);}
+
+/* ---------- Auth ---------- */
+.auth-wrap{padding-top:8px;}
+.role-toggle{display:flex;background:var(--card);border:1px solid var(--line);border-radius:999px;padding:4px;margin-bottom:20px;box-shadow:var(--shadow);}
+.role-toggle button{
+  flex:1;border:none;background:none;padding:10px;border-radius:999px;font-size:13.5px;font-weight:700;
+  color:var(--muted);cursor:pointer;transition:all .18s ease;
+}
+.role-toggle button.active{background:linear-gradient(135deg,var(--night-2),var(--night));color:#fff;box-shadow:var(--shadow);}
+.auth-form{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:20px;box-shadow:var(--shadow-lg);}
+.switch-link{text-align:center;margin-top:14px;font-size:13px;color:var(--muted);}
+.switch-link a{color:var(--teal);font-weight:700;}
+.error-msg{background:#fceaea;color:var(--danger);font-size:12.5px;padding:9px 12px;border-radius:var(--radius-sm);margin-bottom:12px;display:none;}
+.hint-msg{background:#eef3f2;color:var(--teal-deep);font-size:12px;padding:9px 12px;border-radius:var(--radius-sm);margin-bottom:12px;}
+
+/* ---------- Manager ---------- */
+.stat-row{display:flex;gap:10px;margin-bottom:18px;}
+.stat-box{flex:1;background:linear-gradient(135deg,var(--night-2),var(--night));color:#fff;border-radius:var(--radius-sm);padding:13px;text-align:center;box-shadow:var(--shadow);}
+.stat-box .n{font-size:21px;font-weight:800;color:var(--lantern-light);}
+.stat-box .l{font-size:11px;color:#b9b6c8;margin-top:2px;}
+.manager-hotel-card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:15px;margin-bottom:14px;box-shadow:var(--shadow);}
+.mh-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
+.mh-title{font-weight:800;font-size:15.5px;}
+.mh-edit{font-size:12px;color:var(--teal);cursor:pointer;font-weight:700;}
+.res-mini{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-top:1px solid var(--line);}
+.res-mini:first-of-type{border-top:none;}
+.res-mini .who{font-size:13px;font-weight:700;}
+.res-mini .when{font-size:11.5px;color:var(--muted);}
+.res-actions{display:flex;gap:6px;}
+
+.modal-bg{
+  position:fixed;inset:0;background:rgba(21,18,30,.6);z-index:100;display:none;
+  align-items:flex-end;justify-content:center;backdrop-filter:blur(2px);
+}
+.modal-bg.active{display:flex;}
+.modal{
+  background:#fff;width:100%;max-width:520px;border-radius:22px 22px 0 0;
+  padding:20px 18px calc(20px + env(safe-area-inset-bottom));max-height:88vh;overflow-y:auto;
+  animation:slideUp .28s cubic-bezier(.2,.9,.3,1.1);box-shadow:0 -20px 50px rgba(0,0,0,.25);
+}
+@keyframes slideUp{from{transform:translateY(30px);opacity:0;}to{transform:translateY(0);opacity:1;}}
+.modal-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;}
+.modal-head h3{font-size:17px;}
+.close-x{background:var(--paper);border:none;width:30px;height:30px;border-radius:50%;font-size:16px;cursor:pointer;color:var(--muted);transition:background .15s ease;}
+.close-x:hover{background:var(--line);}
+
+.toast{
+  position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(20px);
+  background:linear-gradient(135deg,var(--night-2),var(--night));color:#fff;padding:12px 22px;border-radius:999px;font-size:13px;
+  z-index:200;opacity:0;transition:all .3s ease;box-shadow:var(--shadow-lg);max-width:90%;text-align:center;
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+/* ---------- Install prompt (PWA) ---------- */
+.install-prompt{
+  position:fixed;bottom:78px;left:50%;transform:translateX(-50%) translateY(120%);
+  width:calc(100% - 28px);max-width:490px;z-index:180;
+  background:linear-gradient(135deg,var(--night-2),var(--night));color:#fff;border-radius:20px;
+  padding:16px;box-shadow:0 20px 50px -15px rgba(0,0,0,.6);border:1px solid rgba(255,255,255,.08);
+  transition:transform .35s cubic-bezier(.2,.9,.3,1.1);
+}
+.install-prompt.show{transform:translateX(-50%) translateY(0);}
+.install-prompt .ip-head{display:flex;gap:12px;align-items:center;}
+.install-prompt .ip-icon{width:48px;height:48px;border-radius:12px;flex-shrink:0;overflow:hidden;box-shadow:0 0 0 3px rgba(240,163,78,.2);}
+.install-prompt .ip-icon img{width:100%;height:100%;object-fit:cover;}
+.install-prompt .ip-title{font-size:14.5px;font-weight:800;}
+.install-prompt .ip-sub{font-size:11.5px;color:#b9b6c8;margin-top:2px;line-height:1.6;}
+.install-prompt .ip-actions{display:flex;gap:8px;margin-top:14px;}
+.install-prompt .ip-actions .btn{flex:1;}
+.install-prompt .ip-actions .ip-later{background:none;border:none;color:#b9b6c8;font-size:12px;cursor:pointer;flex:none;padding:0 8px;}
+
+.stars{color:var(--gold);font-size:12.5px;letter-spacing:1px;}
+.divider{height:1px;background:linear-gradient(90deg,transparent,var(--line) 20%,var(--line) 80%,transparent);margin:16px 0;}
+::-webkit-scrollbar{width:0;height:0;}
+</style>
+</head>
+<body>
+
+<div class="bg-blob b1"></div>
+<div class="bg-blob b2"></div>
+<div class="bg-blob b3"></div>
+<div id="app">
+
+  <!-- TOP BAR -->
+  <div class="topbar">
+    <div>
+      <div class="brand">
+        <span class="brand-mark">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none">
+            <path d="M12 2v2.2M8.5 4.2h7l1.2 3.3H7.3L8.5 4.2Z" stroke="url(#lg1)" stroke-width="1.6" stroke-linejoin="round"/>
+            <path d="M7 7.5h10c.4 3.6-.6 7-2.3 9.3-.6.8-1 1.7-1 2.7v.8a1.7 1.7 0 0 1-3.4 0v-.8c0-1-.4-1.9-1-2.7C7.6 14.5 6.6 11.1 7 7.5Z" fill="url(#lg2)" stroke="url(#lg1)" stroke-width="1.3"/>
+            <path d="M10.3 10.2v4.4M13.7 10.2v4.4" stroke="#1c1006" stroke-width="1" stroke-linecap="round" opacity=".35"/>
+            <defs>
+              <linearGradient id="lg1" x1="7" y1="2" x2="17" y2="20" gradientUnits="userSpaceOnUse">
+                <stop stop-color="#f0a34e"/><stop offset="1" stop-color="#a85c1c"/>
+              </linearGradient>
+              <linearGradient id="lg2" x1="7" y1="7.5" x2="17" y2="20.7" gradientUnits="userSpaceOnUse">
+                <stop stop-color="#f6c67a"/><stop offset="1" stop-color="#cf7a2e"/>
+              </linearGradient>
+            </defs>
+          </svg>
+        </span>
+        جاجو
+      </div>
+      <div class="sub">پیدا کردن و رزرو اقامتگاه</div>
+    </div>
+    <div class="user-chip" id="userChip" onclick="handleUserChipClick()">مهمان</div>
+  </div>
+
+  <!-- ===================== SCREEN: SEARCH / HOME ===================== -->
+  <div class="screen active" id="screen-home">
+    <div class="hero">
+      <svg class="hero-pattern" viewBox="0 0 200 120" preserveAspectRatio="xMidYMid slice">
+        <defs>
+          <pattern id="tilePattern" width="26" height="26" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+            <rect width="26" height="26" fill="none"/>
+            <path d="M13 0 L26 13 L13 26 L0 13 Z" fill="none" stroke="rgba(255,255,255,.14)" stroke-width="1"/>
+            <circle cx="13" cy="13" r="2.2" fill="rgba(219,165,60,.18)"/>
+          </pattern>
+        </defs>
+        <rect width="200" height="120" fill="url(#tilePattern)"/>
+      </svg>
+      <h1>محل اقامت بعدی‌ات را <span class="accent">راحت‌تر</span> پیدا کن</h1>
+      <p>جست‌وجو کن، قیمت را ببین، تاریخ را انتخاب کن و رزرو کن.</p>
+    </div>
+    <div class="search-card">
+      <div class="field">
+        <label>مقصد یا نام اقامتگاه</label>
+        <input type="text" id="searchQuery" placeholder="مثلاً شیراز، کاشان، هتل ستاره...">
+      </div>
+      <div class="row-2">
+        <div class="field">
+          <label>تاریخ ورود</label>
+          <div class="jalali-date-wrap" onclick="openJalaliPicker('searchCheckin', todayStr())">
+            <input type="hidden" id="searchCheckin">
+            <span class="jalali-display" id="searchCheckin_disp">انتخاب تاریخ</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M8 3v4M16 3v4M3 10h18"/></svg>
+          </div>
+        </div>
+        <div class="field">
+          <label>تاریخ خروج</label>
+          <div class="jalali-date-wrap" onclick="openJalaliPicker('searchCheckout', document.getElementById('searchCheckin').value)">
+            <input type="hidden" id="searchCheckout">
+            <span class="jalali-display" id="searchCheckout_disp">انتخاب تاریخ</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M8 3v4M16 3v4M3 10h18"/></svg>
+          </div>
+        </div>
+      </div>
+      <div class="field" style="margin-top:12px;">
+        <button class="btn btn-primary" onclick="goSearch()">جست‌وجوی اقامتگاه</button>
+      </div>
+    </div>
+
+    <div class="section-title"><span class="bar"></span> پیشنهاد برای شما</div>
+    <div id="homeList"></div>
+  </div>
+
+  <!-- ===================== SCREEN: LIST ===================== -->
+  <div class="screen" id="screen-list">
+    <h1 class="page-title">نتایج جست‌وجو</h1>
+    <p class="page-desc" id="listSummary"></p>
+    <div class="row-2" style="margin-bottom:16px;">
+      <div class="field" style="margin-bottom:0;">
+        <select id="cityFilter" onchange="renderList()">
+          <option value="">همه شهرها</option>
+        </select>
+      </div>
+      <div class="field" style="margin-bottom:0;">
+        <select id="sortSelect" onchange="renderList()">
+          <option value="default">مرتب‌سازی: پیش‌فرض</option>
+          <option value="price-asc">قیمت: کم به زیاد</option>
+          <option value="price-desc">قیمت: زیاد به کم</option>
+        </select>
+      </div>
+    </div>
+    <div id="listResults"></div>
+  </div>
+
+  <!-- ===================== SCREEN: DETAIL ===================== -->
+  <div class="screen" id="screen-detail"></div>
+
+  <!-- ===================== SCREEN: TRAVELER RESERVATIONS ===================== -->
+  <div class="screen" id="screen-reservations">
+    <h1 class="page-title">رزروهای من</h1>
+    <p class="page-desc">لیست اقامت‌های رزرو شده توسط شما</p>
+    <div id="myResList"></div>
+  </div>
+
+  <!-- ===================== SCREEN: FAVORITES ===================== -->
+  <div class="screen" id="screen-favorites">
+    <h1 class="page-title">علاقه‌مندی‌ها</h1>
+    <p class="page-desc">اقامتگاه‌هایی که نشان کرده‌اید</p>
+    <div id="favList"></div>
+  </div>
+
+
+  <!-- ===================== SCREEN: AUTH ===================== -->
+  <div class="screen" id="screen-auth">
+    <div class="auth-wrap">
+      <h1 class="page-title" id="authTitle">ورود به حساب</h1>
+      <p class="page-desc">مدیران هتل و مدیر سایت وارد شوند · مسافران بدون ثبت‌نام رزرو می‌کنند</p>
+      <button class="btn btn-teal" style="margin-bottom:16px;" onclick="installNow()">📲 نصب برنامه جاجو روی گوشی</button>
+      <div class="role-toggle">
+        <button id="roleBtnTraveler" class="active" onclick="setAuthRole('traveler')">مسافر</button>
+        <button id="roleBtnManager" onclick="setAuthRole('manager')">مدیر هتل</button>
+        <button id="roleBtnAdmin" onclick="setAuthRole('admin')">مدیر سایت</button>
+      </div>
+      <div class="auth-form" id="authForm"></div>
+    </div>
+  </div>
+
+  <!-- ===================== SCREEN: MANAGER DASHBOARD ===================== -->
+  <div class="screen" id="screen-manager">
+    <h1 class="page-title">پنل مدیریت</h1>
+    <p class="page-desc" id="managerWelcome"></p>
+    <div class="stat-row" id="managerStats"></div>
+    <div class="section-title"><span class="bar"></span> اقامتگاه‌های شما</div>
+    <button class="btn btn-outline" style="margin-bottom:16px;" onclick="openHotelModal()">+ افزودن اقامتگاه جدید</button>
+    <div id="managerHotels"></div>
+  </div>
+
+  <!-- ===================== SCREEN: SITE ADMIN ===================== -->
+  <div class="screen" id="screen-admin">
+    <h1 class="page-title">پنل مدیر سایت</h1>
+    <p class="page-desc" id="adminWelcome"></p>
+    <div class="stat-row" id="adminStats"></div>
+    <div class="section-title"><span class="bar"></span> مدیران هتل</div>
+    <button class="btn btn-outline" style="margin-bottom:16px;" onclick="openManagerModal()">+ ثبت مدیر هتل جدید</button>
+    <div id="adminManagers"></div>
+    <div class="section-title"><span class="bar"></span> همه‌ی اقامتگاه‌ها</div>
+    <div id="adminHotels"></div>
+    <div class="section-title"><span class="bar"></span> همه‌ی رزروها</div>
+    <div id="adminReservations"></div>
+  </div>
+
+</div>
+
+<!-- BOTTOM NAV -->
+<div class="bottom-nav" id="bottomNav">
+  <button class="nav-btn active" data-nav="home" onclick="navigate('home')">
+    <svg viewBox="0 0 24 24"><path d="M3 11.5 12 4l9 7.5"/><path d="M5 10v9a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1v-9"/></svg>
+    خانه
+  </button>
+  <button class="nav-btn" data-nav="reservations" onclick="navigate('reservations')">
+    <svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M4 10h16M8 3v4M16 3v4"/></svg>
+    رزروهای من
+  </button>
+  <button class="nav-btn" data-nav="favorites" onclick="navigate('favorites')">
+    <svg viewBox="0 0 24 24"><path d="M12 20s-7-4.5-9.3-8.8C1.2 8 2.5 5 5.6 4.4c1.9-.4 3.7.5 4.7 2.1C11.3 4.9 13.1 4 15 4.4c3.1.6 4.4 3.6 2.9 6.8C15.6 15.5 12 20 12 20Z"/></svg>
+    علاقه‌مندی‌ها
+  </button>
+  <button class="nav-btn" data-nav="manager" onclick="navigate('manager')">
+    <svg viewBox="0 0 24 24"><path d="M3 21h18M5 21V9l7-5 7 5v12M9 21v-6h6v6"/></svg>
+    مدیریت
+  </button>
+  <button class="nav-btn" data-nav="auth" onclick="navigate('auth')">
+    <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-7 8-7s8 3 8 7"/></svg>
+    حساب
+  </button>
+</div>
+
+<div class="modal-bg" id="modalBg"><div class="modal" id="modalBody"></div></div>
+<div class="toast" id="toast"></div>
+
+<!-- نصب برنامه (PWA) -->
+<div class="install-prompt" id="installPrompt">
+  <div class="ip-head">
+    <div class="ip-icon"><img id="ipIconImg" src="" alt="جاجو"></div>
+    <div>
+      <div class="ip-title">جاجو را روی گوشی خود نصب کنید</div>
+      <div class="ip-sub">به‌صورت یک برنامه‌ی کامل نصب می‌شود؛ مثل اپلیکیشن از آیکونش باز می‌شود، حتی بدون اینترنت کار می‌کند.</div>
+    </div>
+  </div>
+  <div class="ip-actions">
+    <button class="btn btn-primary" id="ipInstallBtn">نصب برنامه</button>
+    <button class="btn btn-teal" id="ipHelpBtn" style="display:none;">راهنمای نصب</button>
+    <button class="ip-later" id="ipLaterBtn">بعداً</button>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   داده و ذخیره‌سازی (localStorage)
+============================================================ */
+const DB_KEY = 'jaju_db_v2';
+
+function seedData(){
+  return {
+    hotels: [
+      {
+        id:'h1', ownerPhone:'09120000001', name:'هتل ستاره کویر', city:'یزد',
+        address:'یزد، محله فهادان، کوچه بافت تاریخی', price:1450000,
+        contact:'035-12345678', rooms:6,
+        desc:'اقامتگاهی سنتی در دل بافت تاریخی یزد با معماری کویری، حیاط مرکزی و صبحانه محلی.',
+        img:'https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=800&auto=format&fit=crop'
+      },
+      {
+        id:'h2', ownerPhone:'09120000001', name:'اقامتگاه باغ نارنج', city:'شیراز',
+        address:'شیراز، خیابان لطفعلی‌خان زند', price:980000,
+        contact:'071-98765432', rooms:4,
+        desc:'خانه‌ای قدیمی با باغچه پرتقال، نزدیک به ارگ کریم‌خان و بازار وکیل.',
+        img:'https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?q=80&w=800&auto=format&fit=crop'
+      },
+      {
+        id:'h3', ownerPhone:'09120000002', name:'هتل برج دریا', city:'بندرعباس',
+        address:'بندرعباس، بلوار ساحلی', price:2100000,
+        contact:'076-33221100', rooms:10,
+        desc:'هتل مدرن با چشم‌انداز خلیج فارس، استخر روباز و رستوران غذای دریایی.',
+        img:'https://images.unsplash.com/photo-1571003123894-1f0594d2b5d9?q=80&w=800&auto=format&fit=crop'
+      },
+      {
+        id:'h4', ownerPhone:'09120000002', name:'اقامتگاه کوهستان', city:'کاشان',
+        address:'کاشان، روستای ابیانه', price:750000,
+        contact:'031-55667788', rooms:3,
+        desc:'کلبه‌ای دنج در دل روستای تاریخی ابیانه، مناسب برای فرار از شلوغی شهر.',
+        img:'https://images.unsplash.com/photo-1499696010180-025ef6e1a8f9?q=80&w=800&auto=format&fit=crop'
+      }
+    ],
+    users: [
+      { phone:'09120000000', pass:'admin123', role:'admin', name:'مدیر اصلی سایت' },
+      { phone:'09120000001', pass:'1234', role:'manager', name:'مدیر گروه ستاره' },
+      { phone:'09120000002', pass:'1234', role:'manager', name:'مدیر گروه کوهستان' }
+    ],
+    reservations: []
+  };
+}
+
+// ذخیره‌سازی امن: اگر localStorage در دسترس نباشد (مثلاً در پیش‌نمایش سندباکس‌شده) به حافظه داخلی برمی‌گردیم
+const _memStore = {};
+function storeGet(key){
+  try{ return localStorage.getItem(key); }catch(e){ return _memStore[key] ?? null; }
+}
+function storeSet(key, val){
+  try{ localStorage.setItem(key, val); }catch(e){ _memStore[key] = val; }
+}
+function storeRemove(key){
+  try{ localStorage.removeItem(key); }catch(e){ delete _memStore[key]; }
+}
+
+function loadDB(){
+  try{
+    const raw = storeGet(DB_KEY);
+    if(!raw){ const d = seedData(); saveDB(d); return d; }
+    return JSON.parse(raw);
+  }catch(e){ const d = seedData(); saveDB(d); return d; }
+}
+function saveDB(db){
+  storeSet(DB_KEY, JSON.stringify(db));
+  // اگر Firebase آماده باشد، در پس‌زمینه در Firestore هم ذخیره می‌کنیم
+  if(window.__fbSaveDB){ window.__fbSaveDB(db); }
+}
+
+let DB = loadDB();
+
+/* ---- همگام‌سازی اولیه با Firebase ----
+   ابتدا نسخه‌ی محلی (localStorage) بلافاصله نمایش داده می‌شود تا اپ کند نباشد،
+   سپس به‌محض آماده شدن Firebase، آخرین نسخه از Firestore خوانده و جایگزین می‌شود.
+   اگر هنوز سندی در Firestore وجود نداشته باشد (اولین اجرا)، همین داده‌ی محلی
+   به‌عنوان نسخه‌ی اولیه در Firestore ذخیره می‌شود. */
+async function syncWithFirebase(){
+  if(!window.__fbLoadDB) return;
+  try{
+    const remote = await window.__fbLoadDB();
+    if(remote){
+      DB = remote;
+      storeSet(DB_KEY, JSON.stringify(DB));
+    } else {
+      await window.__fbSaveDB(DB);
+    }
+    // رفرش کردن صفحه فعلی با داده‌ی تازه
+    if(typeof renderHomeList === 'function') renderHomeList();
+    if(typeof updateUserChip === 'function') updateUserChip();
+    if(typeof renderAdmin === 'function' && document.getElementById('screen-admin')?.classList.contains('active')) renderAdmin();
+  }catch(e){
+    console.error('همگام‌سازی با Firebase ناموفق بود:', e);
+  }
+}
+if(window.__fbReady){
+  syncWithFirebase();
+} else {
+  window.addEventListener('firebase-ready', syncWithFirebase, { once:true });
+}
+let SESSION_KEY = 'jaju_session_v2';
+function getSession(){ try{ return JSON.parse(storeGet(SESSION_KEY)); }catch(e){ return null; } }
+function setSession(s){ storeSet(SESSION_KEY, JSON.stringify(s)); }
+function clearSession(){ storeRemove(SESSION_KEY); }
+
+/* ============================================================
+   ابزارهای کمکی
+============================================================ */
+function toast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(window._toastTimer);
+  window._toastTimer = setTimeout(()=>t.classList.remove('show'), 2200);
+}
+function fmtPrice(n){ return n.toLocaleString('fa-IR') + ' تومان'; }
+function todayStr(){ const d=new Date(); return d.toISOString().slice(0,10); }
+function addDays(dateStr,n){ const d=new Date(dateStr); d.setDate(d.getDate()+n); return d.toISOString().slice(0,10); }
+
+/* ================= تقویم شمسی (جلالی) ================= */
+const JALALI_MONTHS = ['فروردین','اردیبهشت','خرداد','تیر','مرداد','شهریور','مهر','آبان','آذر','دی','بهمن','اسفند'];
+const JALALI_WEEKDAYS = ['ش','ی','د','س','چ','پ','ج'];
+function faDigits(n){ return String(n).replace(/\d/g, d=>'۰۱۲۳۴۵۶۷۸۹'[d]); }
+function div(a,b){ return Math.floor(a/b); }
+function gregorianToJalali(gy,gm,gd){
+  const g_d_m=[0,31,59,90,120,151,181,212,243,273,304,334];
+  let jy = (gy<=1600)?0:979; gy -= (gy<=1600)?621:1600;
+  let gy2 = (gm>2)?(gy+1):gy;
+  let days = (365*gy)+(div((gy2+3),4))-(div((gy2+99),100))+(div((gy2+399),400))-80+gd+g_d_m[gm-1];
+  jy += 33*div(days,12053); days %= 12053;
+  jy += 4*div(days,1461); days %= 1461;
+  if(days>365){ jy += div((days-1),365); days=(days-1)%365; }
+  let jm = (days<186)?1+div(days,31):7+div((days-186),30);
+  let jd = 1+((days<186)?(days%31):((days-186)%30));
+  return [jy,jm,jd];
+}
+function jalaliToGregorian(jy,jm,jd){
+  let gy = (jy<=979)?621:1600; jy -= (jy<=979)?0:979;
+  let days = (365*jy)+(div(jy,33)*8)+div(((jy%33)+3),4)+78+jd+((jm<7)?(jm-1)*31:((jm-7)*30)+186);
+  gy += 400*div(days,146097); days %= 146097;
+  let leap=true;
+  if(days>36524){ days--; gy += 100*div(days,36524); days %= 36524; if(days>=365) days++; }
+  gy += 4*div(days,1461); days %= 1461;
+  if(days>365){ gy += div((days-1),365); days=(days-1)%365; }
+  let gd=days+1;
+  const sal_a=[0,31,((gy%4===0&&gy%100!==0)||gy%400===0)?29:28,31,30,31,30,31,31,30,31,30,31];
+  let gm=0;
+  for(gm=1;gm<=12;gm++){ if(gd<=sal_a[gm]) break; gd -= sal_a[gm]; }
+  return [gy,gm,gd];
+}
+function isoToJalali(iso){
+  const [gy,gm,gd]=iso.split('-').map(Number);
+  return gregorianToJalali(gy,gm,gd);
+}
+function jalaliToIso(jy,jm,jd){
+  const [gy,gm,gd]=jalaliToGregorian(jy,jm,jd);
+  return `${String(gy).padStart(4,'0')}-${String(gm).padStart(2,'0')}-${String(gd).padStart(2,'0')}`;
+}
+function isoToJalaliDisplay(iso){
+  if(!iso) return 'انتخاب تاریخ';
+  const [jy,jm,jd]=isoToJalali(iso);
+  return `${faDigits(jd)} ${JALALI_MONTHS[jm-1]} ${faDigits(jy)}`;
+}
+function jalaliDaysInMonth(jy,jm){
+  if(jm<=6) return 31;
+  if(jm<=11) return 30;
+  const nextYearFirstIso = jalaliToIso(jy+1,1,1);
+  const d = new Date(nextYearFirstIso);
+  d.setDate(d.getDate()-1);
+  const iso = d.toISOString().slice(0,10);
+  const [,,jd] = isoToJalali(iso);
+  return jd;
+}
+let _pickerTarget=null, _pickerMin=null, _pickerYear=0, _pickerMonth=0;
+function setDateValue(id, iso){
+  const el = document.getElementById(id);
+  if(!el) return;
+  el.value = iso;
+  const disp = document.getElementById(id+'_disp');
+  if(disp) disp.textContent = isoToJalaliDisplay(iso);
+  el.dispatchEvent(new Event('change'));
+  if(id==='bookCheckin' || id==='bookCheckout'){ if(typeof updateBookSummary==='function') updateBookSummary(); }
+  if(id==='searchCheckin'){
+    const co = document.getElementById('searchCheckout');
+    if(co && co.value && co.value <= iso){ setDateValue('searchCheckout', addDays(iso,1)); }
+  }
+}
+function openJalaliPicker(id, minIso){
+  _pickerTarget = id;
+  _pickerMin = minIso || null;
+  const cur = document.getElementById(id).value || todayStr();
+  const [jy,jm] = isoToJalali(cur);
+  _pickerYear = jy; _pickerMonth = jm;
+  renderJalaliPicker();
+  document.getElementById('modalBg').classList.add('active');
+}
+function jpNav(dir){
+  _pickerMonth += dir;
+  if(_pickerMonth>12){ _pickerMonth=1; _pickerYear++; }
+  if(_pickerMonth<1){ _pickerMonth=12; _pickerYear--; }
+  renderJalaliPicker();
+}
+function jpPick(jd){
+  const iso = jalaliToIso(_pickerYear,_pickerMonth,jd);
+  if(_pickerMin && iso < _pickerMin){ return; }
+  setDateValue(_pickerTarget, iso);
+  closeModal();
+}
+function renderJalaliPicker(){
+  const cur = document.getElementById(_pickerTarget)?.value;
+  const daysCount = jalaliDaysInMonth(_pickerYear,_pickerMonth);
+  const firstIso = jalaliToIso(_pickerYear,_pickerMonth,1);
+  const startWeekday = (new Date(firstIso).getDay()+1)%7; // شنبه=0
+  let cells='';
+  for(let i=0;i<startWeekday;i++) cells += `<div class="jp-cell jp-empty"></div>`;
+  for(let d=1; d<=daysCount; d++){
+    const iso = jalaliToIso(_pickerYear,_pickerMonth,d);
+    const disabled = _pickerMin && iso < _pickerMin;
+    const isSel = iso===cur;
+    const isToday = iso===todayStr();
+    cells += `<button type="button" class="jp-cell${isSel?' jp-sel':''}${isToday&&!isSel?' jp-today':''}" ${disabled?'disabled':''} onclick="jpPick(${d})">${faDigits(d)}</button>`;
+  }
+  document.getElementById('modalBody').innerHTML = `
+    <div class="modal-head">
+      <h3>انتخاب تاریخ</h3>
+      <button class="close-x" onclick="closeModal()">✕</button>
+    </div>
+    <div class="jp-nav">
+      <button type="button" onclick="jpNav(-1)">‹</button>
+      <div class="jp-title">${JALALI_MONTHS[_pickerMonth-1]} ${faDigits(_pickerYear)}</div>
+      <button type="button" onclick="jpNav(1)">›</button>
+    </div>
+    <div class="jp-grid jp-weekdays">${JALALI_WEEKDAYS.map(w=>`<div class="jp-cell jp-wd">${w}</div>`).join('')}</div>
+    <div class="jp-grid">${cells}</div>
+  `;
+}
+function nightsBetween(a,b){
+  const d1=new Date(a), d2=new Date(b);
+  return Math.round((d2-d1)/86400000);
+}
+function uid(){ return 'r'+Math.random().toString(36).slice(2,10); }
+function escapeHtml(s){ return (s||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+/* ============================================================
+   ناوبری بین صفحات
+============================================================ */
+let currentSearch = { query:'', checkin:'', checkout:'' };
+let currentHotelId = null;
+let authRole = 'traveler';
+
+function navigate(name){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+
+  const session = getSession();
+
+  if(name==='reservations' && !session){
+    navigate('auth'); toast('برای دیدن رزروها ابتدا وارد شوید'); return;
+  }
+  if(name==='manager'){
+    if(!session){ authRole='manager'; navigate('auth'); toast('برای مدیریت، وارد حساب مدیر شوید'); return; }
+    if(session.role==='admin'){ navigate('admin'); return; }
+    if(session.role!=='manager'){ toast('این بخش مخصوص مدیران اقامتگاه است'); return; }
+    renderManager();
+  }
+  if(name==='admin'){
+    if(!session){ authRole='admin'; navigate('auth'); toast('ابتدا به‌عنوان مدیر سایت وارد شوید'); return; }
+    if(session.role!=='admin'){ toast('این بخش مخصوص مدیر اصلی سایت است'); return; }
+    renderAdmin();
+  }
+  if(name==='reservations') renderMyReservations();
+  if(name==='favorites') renderFavorites();
+  if(name==='home') renderHomeList();
+  if(name==='auth') renderAuthScreen();
+
+  document.getElementById('screen-'+name).classList.add('active');
+  const navBtn = document.querySelector('.nav-btn[data-nav="'+name+'"]');
+  if(navBtn) navBtn.classList.add('active');
+  window.scrollTo(0,0);
+  updateUserChip();
+}
+
+function updateUserChip(){
+  const s = getSession();
+  const chip = document.getElementById('userChip');
+  if(s){ chip.textContent = (s.role==='admin'?'🛡️ ':(s.role==='manager'?'👔 ':'🧳 ')) + s.name; }
+  else{ chip.textContent = 'مهمان — ورود'; }
+}
+function handleUserChipClick(){
+  const s = getSession();
+  if(s) navigate(s.role==='admin' ? 'admin' : (s.role==='manager' ? 'manager' : 'reservations'));
+  else navigate('auth');
+}
+
+/* ============================================================
+   علاقه‌مندی‌ها (Favorites)
+============================================================ */
+const FAV_KEY = 'jaju_favs';
+function getFavs(){ try{ return JSON.parse(storeGet(FAV_KEY)||'[]'); }catch(e){ return []; } }
+function isFav(id){ return getFavs().includes(id); }
+function toggleFav(id){
+  let favs = getFavs();
+  if(favs.includes(id)){ favs = favs.filter(x=>x!==id); toast('از علاقه‌مندی‌ها حذف شد'); }
+  else{ favs.push(id); toast('به علاقه‌مندی‌ها اضافه شد'); }
+  storeSet(FAV_KEY, JSON.stringify(favs));
+  document.querySelectorAll('.fav-btn[data-hid="'+id+'"]').forEach(b=>b.classList.toggle('active', favs.includes(id)));
+}
+function renderFavorites(){
+  const favs = getFavs();
+  const el = document.getElementById('favList');
+  const hotels = DB.hotels.filter(h=>favs.includes(h.id));
+  if(hotels.length===0){ el.innerHTML = emptyState('هنوز اقامتگاهی را نشان نکرده‌اید'); return; }
+  el.innerHTML = hotels.map(hotelCardHtml).join('');
+}
+
+/* فهرست امکانات رفاهی قابل انتخاب برای مدیر */
+const AMENITY_LIST = [
+  {key:'wifi', label:'وای‌فای رایگان', icon:'📶'},
+  {key:'parking', label:'پارکینگ', icon:'🅿️'},
+  {key:'breakfast', label:'صبحانه', icon:'🍳'},
+  {key:'pool', label:'استخر', icon:'🏊'},
+  {key:'ac', label:'تهویه مطبوع', icon:'❄️'},
+  {key:'gym', label:'باشگاه بدنسازی', icon:'🏋️'},
+];
+function amenityLabel(key){ const a=AMENITY_LIST.find(x=>x.key===key); return a?`${a.icon} ${a.label}`:key; }
+function renderHomeList(){
+  const el = document.getElementById('homeList');
+  const hotels = DB.hotels.slice(0,4);
+  if(hotels.length===0){ el.innerHTML = emptyState('هنوز اقامتگاهی ثبت نشده'); return; }
+  el.innerHTML = hotels.map(hotelCardHtml).join('');
+}
+function emptyState(msg){
+  return `<div class="empty-state"><div class="ic">🔍</div><div>${escapeHtml(msg)}</div></div>`;
+}
+function hotelCardHtml(h){
+  return `
+  <div class="hotel-card" onclick="openDetail('${h.id}')">
+    <div class="hotel-img" style="background-image:url('${h.img}')">
+      <div class="hotel-img-overlay"></div>
+      <span class="hotel-tag">${escapeHtml(h.city)}</span>
+      <button class="fav-btn${isFav(h.id)?' active':''}" data-hid="${h.id}" onclick="event.stopPropagation();toggleFav('${h.id}')">
+        <svg viewBox="0 0 24 24" width="18" height="18"><path d="M12 20s-7-4.5-9.3-8.8C1.2 8 2.5 5 5.6 4.4c1.9-.4 3.7.5 4.7 2.1C11.3 4.9 13.1 4 15 4.4c3.1.6 4.4 3.6 2.9 6.8C15.6 15.5 12 20 12 20Z"/></svg>
+      </button>
+    </div>
+    <div class="hotel-body">
+      <div class="hotel-name">${escapeHtml(h.name)}</div>
+      <div class="hotel-loc">📍 ${escapeHtml(h.address)}</div>
+      ${h.amenities&&h.amenities.length ? `<div class="chip-row">${h.amenities.slice(0,3).map(a=>`<span class="chip">${amenityLabel(a)}</span>`).join('')}</div>` : ''}
+      <div class="hotel-foot">
+        <div class="hotel-price">هر شب از <b>${fmtPrice(h.price)}</b></div>
+        <button class="btn btn-primary btn-sm" onclick="event.stopPropagation();openDetail('${h.id}')">مشاهده</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function goSearch(){
+  currentSearch.query = document.getElementById('searchQuery').value.trim();
+  currentSearch.checkin = document.getElementById('searchCheckin').value;
+  currentSearch.checkout = document.getElementById('searchCheckout').value;
+
+  if(currentSearch.checkin && currentSearch.checkout){
+    if(currentSearch.checkout <= currentSearch.checkin){
+      toast('تاریخ خروج باید بعد از تاریخ ورود باشد'); return;
+    }
+  }
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('screen-list').classList.add('active');
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('listSummary').textContent = currentSearch.query
+    ? `نتایج برای «${currentSearch.query}»`
+    : 'همه‌ی اقامتگاه‌های موجود';
+  renderList();
+  window.scrollTo(0,0);
+}
+
+function matchesQuery(h,q){
+  if(!q) return true;
+  q = q.toLowerCase();
+  return h.name.toLowerCase().includes(q) || h.city.toLowerCase().includes(q) || h.address.toLowerCase().includes(q);
+}
+
+function renderList(){
+  let results = DB.hotels.filter(h=>matchesQuery(h,currentSearch.query));
+
+  const citySel = document.getElementById('cityFilter');
+  const cities = [...new Set(DB.hotels.map(h=>h.city))].sort();
+  if(citySel.dataset.built!=='1'){
+    citySel.innerHTML = '<option value="">همه شهرها</option>' + cities.map(c=>`<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
+    citySel.dataset.built='1';
+  }
+  if(citySel.value) results = results.filter(h=>h.city===citySel.value);
+
+  const sort = document.getElementById('sortSelect').value;
+  if(sort==='price-asc') results.sort((a,b)=>a.price-b.price);
+  if(sort==='price-desc') results.sort((a,b)=>b.price-a.price);
+
+  const el = document.getElementById('listResults');
+  if(results.length===0){ el.innerHTML = emptyState('اقامتگاهی با این مشخصات پیدا نشد. جست‌وجوی دیگری را امتحان کنید.'); return; }
+  el.innerHTML = results.map(hotelCardHtml).join('');
+}
+
+/* ============================================================
+   صفحه جزئیات و رزرو
+============================================================ */
+function openDetail(hotelId){
+  currentHotelId = hotelId;
+  const h = DB.hotels.find(x=>x.id===hotelId);
+  if(!h){ toast('اقامتگاه پیدا نشد'); return; }
+
+  const ci = currentSearch.checkin || todayStr();
+  const co = currentSearch.checkout || addDays(ci,1);
+
+  const el = document.getElementById('screen-detail');
+  el.innerHTML = `
+    <button class="btn btn-ghost btn-sm" style="margin-bottom:14px;" onclick="backFromDetail()">→ بازگشت</button>
+    <div class="detail-img" style="background-image:url('${h.img}')">
+      <button class="fav-btn detail-fav${isFav(h.id)?' active':''}" data-hid="${h.id}" onclick="toggleFav('${h.id}')">
+        <svg viewBox="0 0 24 24" width="20" height="20"><path d="M12 20s-7-4.5-9.3-8.8C1.2 8 2.5 5 5.6 4.4c1.9-.4 3.7.5 4.7 2.1C11.3 4.9 13.1 4 15 4.4c3.1.6 4.4 3.6 2.9 6.8C15.6 15.5 12 20 12 20Z"/></svg>
+      </button>
+      <button class="share-btn" onclick="shareHotel('${h.id}')">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="18" cy="5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="19" r="2.5"/><path d="M8.2 10.8 15.8 6.2M8.2 13.2l7.6 4.6"/></svg>
+      </button>
+    </div>
+    <div class="detail-name">${escapeHtml(h.name)}</div>
+    <div class="detail-loc">📍 ${escapeHtml(h.address)} · ${escapeHtml(h.city)}</div>
+
+    <div class="info-grid">
+      <div class="info-box"><div class="lbl">قیمت هر شب</div><div class="val">${fmtPrice(h.price)}</div></div>
+      <div class="info-box"><div class="lbl">تعداد اتاق</div><div class="val">${h.rooms} اتاق</div></div>
+    </div>
+
+    ${h.amenities && h.amenities.length ? `
+    <div class="section-title"><span class="bar"></span> امکانات رفاهی</div>
+    <div class="chip-row" style="margin-bottom:16px;">${h.amenities.map(a=>`<span class="chip">${amenityLabel(a)}</span>`).join('')}</div>
+    ` : ''}
+
+    <div class="section-title"><span class="bar"></span> درباره اقامتگاه</div>
+    <div class="desc-box">${escapeHtml(h.desc)}</div>
+
+    <div class="section-title"><span class="bar"></span> تماس با مدیر اقامتگاه</div>
+    <div class="contact-box">
+      <div><div class="lbl">شماره تماس مدیر</div><div class="val">${escapeHtml(h.contact)}</div></div>
+      <a class="btn btn-outline btn-sm" style="background:#fff;" href="tel:${h.contact.replace(/[^0-9+]/g,'')}">تماس</a>
+    </div>
+
+    <div class="section-title"><span class="bar"></span> انتخاب تاریخ و رزرو</div>
+    <div class="book-box">
+      <div class="row-2">
+        <div class="field"><label>تاریخ ورود</label>
+          <div class="jalali-date-wrap" onclick="openJalaliPicker('bookCheckin', todayStr())">
+            <input type="hidden" id="bookCheckin" value="${ci}">
+            <span class="jalali-display" id="bookCheckin_disp">${isoToJalaliDisplay(ci)}</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M8 3v4M16 3v4M3 10h18"/></svg>
+          </div>
+        </div>
+        <div class="field"><label>تاریخ خروج</label>
+          <div class="jalali-date-wrap" onclick="openJalaliPicker('bookCheckout', document.getElementById('bookCheckin').value)">
+            <input type="hidden" id="bookCheckout" value="${co}">
+            <span class="jalali-display" id="bookCheckout_disp">${isoToJalaliDisplay(co)}</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M8 3v4M16 3v4M3 10h18"/></svg>
+          </div>
+        </div>
+      </div>
+      <div class="field">
+        <label>نام مسافر</label>
+        <input type="text" id="bookName" placeholder="نام و نام خانوادگی" value="${getSession()?escapeHtml(getSession().name):''}">
+      </div>
+      <div class="field">
+        <label>شماره تماس</label>
+        <input type="tel" id="bookPhone" placeholder="09xxxxxxxxx" value="${getSession()?escapeHtml(getSession().phone):''}">
+      </div>
+      <div class="error-msg" id="bookError"></div>
+      <div class="price-summary">
+        <div><div class="nights" id="nightsLabel"></div><div class="total" id="totalLabel"></div></div>
+        <button class="btn btn-primary" style="width:auto;padding:12px 22px;" onclick="submitBooking('${h.id}')">رزرو کن</button>
+      </div>
+    </div>
+  `;
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  el.classList.add('active');
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  updateBookSummary();
+  window.scrollTo(0,0);
+}
+
+function shareHotel(hotelId){
+  const h = DB.hotels.find(x=>x.id===hotelId);
+  if(!h) return;
+  const text = `${h.name} — ${h.city} — هر شب از ${fmtPrice(h.price)}`;
+  if(navigator.share){
+    navigator.share({ title:h.name, text, url:location.href }).catch(()=>{});
+  } else {
+    navigator.clipboard?.writeText(text+' '+location.href);
+    toast('اطلاعات اقامتگاه کپی شد');
+  }
+}
+function backFromDetail(){
+  navigate(document.getElementById('screen-list').innerHTML.trim() ? 'home' : 'home');
+  // Simply return to list if we came from search, else home
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('screen-list').classList.add('active');
+}
+
+function updateBookSummary(){
+  const h = DB.hotels.find(x=>x.id===currentHotelId);
+  const ci = document.getElementById('bookCheckin').value;
+  const co = document.getElementById('bookCheckout').value;
+  const err = document.getElementById('bookError');
+  err.style.display='none';
+  const n = nightsBetween(ci,co);
+  if(!ci || !co || n<=0){
+    document.getElementById('nightsLabel').textContent = 'تاریخ نامعتبر است';
+    document.getElementById('totalLabel').textContent = '—';
+    return;
+  }
+  document.getElementById('bookCheckout').min = addDays(ci,1);
+  document.getElementById('nightsLabel').textContent = n + ' شب اقامت';
+  document.getElementById('totalLabel').textContent = fmtPrice(n*h.price);
+}
+
+function submitBooking(hotelId){
+  const h = DB.hotels.find(x=>x.id===hotelId);
+  const ci = document.getElementById('bookCheckin').value;
+  const co = document.getElementById('bookCheckout').value;
+  const name = document.getElementById('bookName').value.trim();
+  const phone = document.getElementById('bookPhone').value.trim();
+  const err = document.getElementById('bookError');
+
+  const n = nightsBetween(ci,co);
+  if(!ci || !co || n<=0){ err.textContent='لطفاً تاریخ ورود و خروج معتبر انتخاب کنید.'; err.style.display='block'; return; }
+  if(ci < todayStr()){ err.textContent='تاریخ ورود نمی‌تواند در گذشته باشد.'; err.style.display='block'; return; }
+  if(!name){ err.textContent='لطفاً نام مسافر را وارد کنید.'; err.style.display='block'; return; }
+  if(!/^09\d{9}$/.test(phone)){ err.textContent='شماره تماس معتبر نیست. مثال: 09123456789'; err.style.display='block'; return; }
+
+  // چک تداخل تاریخ برای همین اقامتگاه (ظرفیت ساده بر اساس تعداد اتاق)
+  const overlapping = DB.reservations.filter(r=>
+    r.hotelId===hotelId && r.status==='confirmed' &&
+    !(co<=r.checkin || ci>=r.checkout)
+  ).length;
+  if(overlapping >= h.rooms){
+    err.textContent='متاسفانه در این بازه تاریخی، اتاق خالی موجود نیست.'; err.style.display='block'; return;
+  }
+
+  const reservation = {
+    id: uid(), hotelId: h.id, hotelName: h.name, hotelCity: h.city,
+    travelerPhone: phone, travelerName: name,
+    checkin: ci, checkout: co, nights: n, total: n*h.price,
+    status: 'confirmed', createdAt: new Date().toISOString()
+  };
+  DB.reservations.push(reservation);
+  saveDB(DB);
+
+  // اگر کاربر لاگین نبود، یک نشست موقت مسافر بساز تا رزروهایش را ببیند
+  const s = getSession();
+  if(!s){ setSession({role:'traveler', phone, name}); }
+
+  err.style.display='none';
+  toast('رزرو شما با موفقیت ثبت شد ✅');
+  navigate('reservations');
+}
+
+/* ============================================================
+   رزروهای مسافر
+============================================================ */
+function renderMyReservations(){
+  const s = getSession();
+  const el = document.getElementById('myResList');
+  if(!s){ el.innerHTML = emptyState('برای دیدن رزروها وارد حساب شوید'); return; }
+  const mine = DB.reservations.filter(r=>r.travelerPhone===s.phone).sort((a,b)=>b.createdAt.localeCompare(a.createdAt));
+  if(mine.length===0){ el.innerHTML = emptyState('هنوز رزروی ثبت نکرده‌اید'); return; }
+  el.innerHTML = mine.map(r=>`
+    <div class="res-card">
+      <div class="res-top">
+        <div class="res-hotel">${escapeHtml(r.hotelName)}</div>
+        <span class="status ${r.status==='confirmed'?'confirmed':'cancelled'}">${r.status==='confirmed'?'تایید شده':'لغو شده'}</span>
+      </div>
+      <div class="res-dates">
+        <div>ورود: <b>${isoToJalaliDisplay(r.checkin)}</b></div>
+        <div>خروج: <b>${isoToJalaliDisplay(r.checkout)}</b></div>
+        <div>${r.nights} شب</div>
+      </div>
+      <div class="res-foot">
+        <div class="res-price">${fmtPrice(r.total)}</div>
+        ${r.status==='confirmed' ? `<button class="btn btn-danger btn-sm" onclick="cancelReservation('${r.id}')">لغو رزرو</button>` : ''}
+      </div>
+    </div>
+  `).join('');
+}
+function cancelReservation(id){
+  const r = DB.reservations.find(x=>x.id===id);
+  if(!r) return;
+  r.status='cancelled';
+  saveDB(DB);
+  toast('رزرو لغو شد');
+  renderMyReservations();
+}
+
+/* ============================================================
+   احراز هویت
+============================================================ */
+function setAuthRole(role){
+  authRole = role;
+  document.getElementById('roleBtnTraveler').classList.toggle('active', role==='traveler');
+  document.getElementById('roleBtnManager').classList.toggle('active', role==='manager');
+  document.getElementById('roleBtnAdmin').classList.toggle('active', role==='admin');
+  updateAuthForm();
+}
+function renderAuthScreen(){
+  setAuthRole(authRole);
+}
+function updateAuthForm(){
+  const form = document.getElementById('authForm');
+  if(authRole==='traveler'){
+    // مسافر بدون ثبت‌نام؛ فقط با شماره موبایل رزروهایش را می‌بیند
+    form.innerHTML = `
+      <div class="hint-msg">برای رزرو اقامتگاه نیازی به ثبت‌نام نیست. فقط شماره موبایلی که با آن رزرو کرده‌اید را وارد کنید تا رزروهایتان را ببینید.</div>
+      <div class="error-msg" id="authError"></div>
+      <div class="field"><label>شماره موبایل</label><input type="tel" id="authPhone" placeholder="09xxxxxxxxx"></div>
+      <button class="btn btn-primary" style="margin-top:6px;" onclick="submitTravelerView()">مشاهده‌ی رزروهای من</button>`;
+  } else {
+    const isAdmin = authRole==='admin';
+    form.innerHTML = `
+      <div class="hint-msg">${isAdmin?'این بخش مخصوص مدیر اصلی سایت است.':'حساب مدیر هتل فقط توسط مدیر سایت ثبت می‌شود. برای دریافت حساب با مدیر سایت تماس بگیرید.'}</div>
+      <div class="error-msg" id="authError"></div>
+      <div class="field"><label>شماره موبایل</label><input type="tel" id="authPhone" placeholder="09xxxxxxxxx"></div>
+      <div class="field"><label>رمز عبور</label><input type="password" id="authPass" placeholder="رمز عبور"></div>
+      <button class="btn btn-primary" style="margin-top:6px;" onclick="submitAuth()">ورود</button>`;
+  }
+}
+function submitTravelerView(){
+  const phone = document.getElementById('authPhone').value.trim();
+  const err = document.getElementById('authError');
+  err.style.display='none';
+  if(!/^09\d{9}$/.test(phone)){ err.textContent='شماره موبایل معتبر نیست. مثال: 09123456789'; err.style.display='block'; return; }
+  setSession({role:'traveler', phone, name:'مسافر'});
+  toast('خوش آمدید 🧳');
+  navigate('reservations');
+}
+function submitAuth(){
+  const phone = document.getElementById('authPhone').value.trim();
+  const pass = document.getElementById('authPass').value;
+  const err = document.getElementById('authError');
+  err.style.display='none';
+
+  if(!/^09\d{9}$/.test(phone)){ err.textContent='شماره موبایل معتبر نیست. مثال: 09123456789'; err.style.display='block'; return; }
+  if(!pass){ err.textContent='رمز عبور را وارد کنید.'; err.style.display='block'; return; }
+
+  const user = DB.users.find(u=>u.phone===phone && u.role===authRole);
+  if(!user){
+    err.textContent = authRole==='admin' ? 'حساب مدیر سایت با این شماره یافت نشد.' : 'این شماره به‌عنوان مدیر هتل ثبت نشده است. با مدیر سایت تماس بگیرید.';
+    err.style.display='block'; return;
+  }
+  if(user.pass!==pass){ err.textContent='رمز عبور اشتباه است.'; err.style.display='block'; return; }
+
+  setSession({role:user.role, phone:user.phone, name:user.name});
+  toast('خوش آمدید، ' + user.name);
+  navigate(user.role==='admin' ? 'admin' : 'manager');
+}
+function logout(){
+  clearSession();
+  toast('از حساب خارج شدید');
+  navigate('home');
+}
+
+/* ============================================================
+   پنل مدیریت
+============================================================ */
+function renderManager(){
+  const s = getSession();
+  document.getElementById('managerWelcome').innerHTML = `خوش آمدید، ${escapeHtml(s.name)} · <a style="color:var(--danger);font-weight:700;" onclick="logout()">خروج از حساب</a>`;
+
+  const myHotels = DB.hotels.filter(h=>h.ownerPhone===s.phone);
+  const myHotelIds = myHotels.map(h=>h.id);
+  const myRes = DB.reservations.filter(r=>myHotelIds.includes(r.hotelId));
+  const confirmedCount = myRes.filter(r=>r.status==='confirmed').length;
+  const revenue = myRes.filter(r=>r.status==='confirmed').reduce((a,r)=>a+r.total,0);
+
+  document.getElementById('managerStats').innerHTML = `
+    <div class="stat-box"><div class="n">${myHotels.length}</div><div class="l">اقامتگاه</div></div>
+    <div class="stat-box"><div class="n">${confirmedCount}</div><div class="l">رزرو فعال</div></div>
+    <div class="stat-box"><div class="n">${revenue.toLocaleString('fa-IR')}</div><div class="l">درآمد (تومان)</div></div>
+  `;
+
+  const el = document.getElementById('managerHotels');
+  if(myHotels.length===0){ el.innerHTML = emptyState('هنوز اقامتگاهی ثبت نکرده‌اید'); return; }
+
+  el.innerHTML = myHotels.map(h=>{
+    const resForHotel = DB.reservations.filter(r=>r.hotelId===h.id).sort((a,b)=>b.createdAt.localeCompare(a.createdAt));
+    const resHtml = resForHotel.length===0
+      ? `<div style="font-size:12.5px;color:var(--muted);padding:8px 0;">هنوز رزروی برای این اقامتگاه ثبت نشده</div>`
+      : resForHotel.map(r=>`
+        <div class="res-mini">
+          <div>
+            <div class="who">${escapeHtml(r.travelerName)} · ${r.travelerPhone}</div>
+            <div class="when">${isoToJalaliDisplay(r.checkin)} تا ${isoToJalaliDisplay(r.checkout)} (${r.nights} شب) · ${fmtPrice(r.total)}</div>
+          </div>
+          <div class="res-actions">
+            <span class="status ${r.status==='confirmed'?'confirmed':'cancelled'}">${r.status==='confirmed'?'تایید':'لغو'}</span>
+            ${r.status==='confirmed' ? `<button class="btn btn-danger btn-sm" onclick="managerCancelRes('${r.id}')">لغو</button>`:''}
+          </div>
+        </div>
+      `).join('');
+
+    return `
+      <div class="manager-hotel-card">
+        <div class="mh-head">
+          <div class="mh-title">${escapeHtml(h.name)} <span style="font-weight:400;color:var(--muted);font-size:12px;">· ${escapeHtml(h.city)}</span></div>
+          <div class="mh-edit" onclick="openHotelModal('${h.id}')">ویرایش</div>
+        </div>
+        <div style="font-size:12.5px;color:var(--muted);margin-bottom:6px;">قیمت هر شب: <b style="color:var(--ink);">${fmtPrice(h.price)}</b> · ${h.rooms} اتاق · تماس: ${escapeHtml(h.contact)}</div>
+        ${resHtml}
+      </div>
+    `;
+  }).join('');
+}
+function managerCancelRes(id){
+  const r = DB.reservations.find(x=>x.id===id);
+  if(!r) return;
+  r.status='cancelled';
+  saveDB(DB);
+  toast('رزرو توسط مدیر لغو شد');
+  renderManager();
+}
+
+/* ---- افزودن / ویرایش اقامتگاه (مودال) ---- */
+function openHotelModal(hotelId){
+  const s = getSession();
+  const editing = !!hotelId;
+  const h = editing ? DB.hotels.find(x=>x.id===hotelId) : null;
+
+  document.getElementById('modalBody').innerHTML = `
+    <div class="modal-head">
+      <h3>${editing?'ویرایش اقامتگاه':'افزودن اقامتگاه جدید'}</h3>
+      <button class="close-x" onclick="closeModal()">×</button>
+    </div>
+    <div class="field"><label>نام اقامتگاه</label><input id="mName" value="${h?escapeHtml(h.name):''}" placeholder="مثلاً هتل بهار"></div>
+    <div class="row-2">
+      <div class="field"><label>شهر</label><input id="mCity" value="${h?escapeHtml(h.city):''}" placeholder="مثلاً اصفهان"></div>
+      <div class="field"><label>تعداد اتاق</label><input id="mRooms" type="number" min="1" value="${h?h.rooms:''}"></div>
+    </div>
+    <div class="field"><label>آدرس</label><input id="mAddress" value="${h?escapeHtml(h.address):''}" placeholder="آدرس دقیق"></div>
+    <div class="field"><label>قیمت هر شب (تومان)</label><input id="mPrice" type="number" min="0" value="${h?h.price:''}"></div>
+    <div class="field"><label>شماره تماس مدیر</label><input id="mContact" value="${h?escapeHtml(h.contact):''}" placeholder="مثلاً 021-12345678"></div>
+    <div class="field"><label>لینک تصویر (اختیاری)</label><input id="mImg" value="${h?h.img:''}" placeholder="https://..."></div>
+    <div class="field"><label>توضیحات</label><input id="mDesc" value="${h?escapeHtml(h.desc):''}" placeholder="توضیح کوتاه درباره اقامتگاه"></div>
+    <div class="field">
+      <label>امکانات رفاهی</label>
+      <div class="amenity-grid">
+        ${AMENITY_LIST.map(a=>`
+          <label class="amenity-opt">
+            <input type="checkbox" value="${a.key}" class="mAmenity" ${h&&h.amenities&&h.amenities.includes(a.key)?'checked':''}>
+            <span>${a.icon} ${a.label}</span>
+          </label>
+        `).join('')}
+      </div>
+    </div>
+    <div class="error-msg" id="mError"></div>
+    <button class="btn btn-primary" style="margin-top:8px;" onclick="saveHotel('${hotelId||''}')">${editing?'ذخیره تغییرات':'افزودن اقامتگاه'}</button>
+    ${editing ? `<button class="btn btn-danger" style="margin-top:8px;" onclick="deleteHotel('${hotelId}')">حذف اقامتگاه</button>` : ''}
+  `;
+  document.getElementById('modalBg').classList.add('active');
+}
+function closeModal(){ document.getElementById('modalBg').classList.remove('active'); }
+
+function saveHotel(hotelId){
+  const s = getSession();
+  const name = document.getElementById('mName').value.trim();
+  const city = document.getElementById('mCity').value.trim();
+  const rooms = parseInt(document.getElementById('mRooms').value);
+  const address = document.getElementById('mAddress').value.trim();
+  const price = parseInt(document.getElementById('mPrice').value);
+  const contact = document.getElementById('mContact').value.trim();
+  const img = document.getElementById('mImg').value.trim() || 'https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=800&auto=format&fit=crop';
+  const desc = document.getElementById('mDesc').value.trim();
+  const amenities = Array.from(document.querySelectorAll('.mAmenity:checked')).map(c=>c.value);
+  const err = document.getElementById('mError');
+
+  if(!name || !city || !address || !contact || !desc || !rooms || rooms<1 || !price || price<=0){
+    err.textContent='لطفاً همه‌ی فیلدهای ضروری را به‌درستی پر کنید.'; err.style.display='block'; return;
+  }
+
+  if(hotelId){
+    const h = DB.hotels.find(x=>x.id===hotelId);
+    if(h.ownerPhone!==s.phone){ err.textContent='شما اجازه ویرایش این اقامتگاه را ندارید.'; err.style.display='block'; return; }
+    Object.assign(h, {name,city,rooms,address,price,contact,img,desc,amenities});
+  } else {
+    DB.hotels.push({ id:'h'+Date.now(), ownerPhone:s.phone, name,city,rooms,address,price,contact,img,desc,amenities });
+  }
+  saveDB(DB);
+  closeModal();
+  toast('اقامتگاه ذخیره شد');
+  renderManager();
+}
+function deleteHotel(hotelId){
+  const s = getSession();
+  const h = DB.hotels.find(x=>x.id===hotelId);
+  if(!h || h.ownerPhone!==s.phone) return;
+  DB.hotels = DB.hotels.filter(x=>x.id!==hotelId);
+  DB.reservations = DB.reservations.filter(r=>r.hotelId!==hotelId);
+  saveDB(DB);
+  closeModal();
+  toast('اقامتگاه حذف شد');
+  renderManager();
+}
+
+/* ============================================================
+   پنل مدیر اصلی سایت
+============================================================ */
+function renderAdmin(){
+  const s = getSession();
+  document.getElementById('adminWelcome').innerHTML = `خوش آمدید، ${escapeHtml(s.name)} · <a style="color:var(--danger);font-weight:700;" onclick="logout()">خروج از حساب</a>`;
+
+  const managers = DB.users.filter(u=>u.role==='manager');
+  const confirmed = DB.reservations.filter(r=>r.status==='confirmed');
+  const revenue = confirmed.reduce((a,r)=>a+r.total,0);
+
+  document.getElementById('adminStats').innerHTML = `
+    <div class="stat-box"><div class="n">${managers.length}</div><div class="l">مدیر هتل</div></div>
+    <div class="stat-box"><div class="n">${DB.hotels.length}</div><div class="l">اقامتگاه</div></div>
+    <div class="stat-box"><div class="n">${confirmed.length}</div><div class="l">رزرو فعال</div></div>
+    <div class="stat-box"><div class="n">${revenue.toLocaleString('fa-IR')}</div><div class="l">درآمد (تومان)</div></div>
+  `;
+
+  // فهرست مدیران هتل
+  const mEl = document.getElementById('adminManagers');
+  if(managers.length===0){ mEl.innerHTML = emptyState('هنوز مدیر هتلی ثبت نشده است'); }
+  else {
+    mEl.innerHTML = managers.map(u=>{
+      const nHotels = DB.hotels.filter(h=>h.ownerPhone===u.phone).length;
+      return `
+        <div class="manager-hotel-card">
+          <div class="mh-head">
+            <div class="mh-title">👔 ${escapeHtml(u.name)} <span style="font-weight:400;color:var(--muted);font-size:12px;">${u.phone}</span></div>
+            <div class="mh-edit" onclick="openManagerModal('${u.phone}')">ویرایش</div>
+          </div>
+          <div style="font-size:12.5px;color:var(--muted);">اقامتگاه‌ها: <b>${nHotels}</b> · <span class="status confirmed">فعال</span></div>
+        </div>`;
+    }).join('');
+  }
+
+  // فهرست همه‌ی اقامتگاه‌ها
+  const hEl = document.getElementById('adminHotels');
+  hEl.innerHTML = DB.hotels.length===0 ? emptyState('اقامتگاهی ثبت نشده')
+    : DB.hotels.map(h=>{
+      const owner = DB.users.find(u=>u.phone===h.ownerPhone);
+      return `
+        <div class="res-card">
+          <div class="res-top">
+            <div class="res-hotel">${escapeHtml(h.name)}</div>
+            <span class="status confirmed">${escapeHtml(h.city)}</span>
+          </div>
+          <div class="res-dates"><div>مدیر: <b>${owner?escapeHtml(owner.name):'—'}</b> ${h.ownerPhone}</div><div>${h.rooms} اتاق</div></div>
+          <div class="res-foot"><div class="res-price">${fmtPrice(h.price)} <span style="font-size:11px;color:var(--muted);">/ شب</span></div></div>
+        </div>`;
+    }).join('');
+
+  // فهرست همه‌ی رزروها
+  const rEl = document.getElementById('adminReservations');
+  rEl.innerHTML = DB.reservations.length===0 ? emptyState('رزروی ثبت نشده')
+    : DB.reservations.slice().sort((a,b)=>b.createdAt.localeCompare(a.createdAt)).map(r=>`
+      <div class="res-card">
+        <div class="res-top">
+          <div class="res-hotel">${escapeHtml(r.hotelName)}</div>
+          <span class="status ${r.status==='confirmed'?'confirmed':'cancelled'}">${r.status==='confirmed'?'تایید':'لغو'}</span>
+        </div>
+        <div class="res-dates"><div>مسافر: <b>${escapeHtml(r.travelerName)}</b> ${r.travelerPhone}</div><div>${isoToJalaliDisplay(r.checkin)} تا ${isoToJalaliDisplay(r.checkout)}</div></div>
+        <div class="res-foot"><div class="res-price">${fmtPrice(r.total)}</div></div>
+      </div>`).join('');
+}
+
+/* ---- ثبت / ویرایش / حذف مدیر هتل توسط مدیر سایت ---- */
+function openManagerModal(phone){
+  const editing = !!phone;
+  const u = editing ? DB.users.find(x=>x.phone===phone && x.role==='manager') : null;
+  document.getElementById('modalBody').innerHTML = `
+    <div class="modal-head">
+      <h3>${editing?'ویرایش مدیر هتل':'ثبت مدیر هتل جدید'}</h3>
+      <button class="close-x" onclick="closeModal()">×</button>
+    </div>
+    <div class="field"><label>نام مدیر</label><input id="mgName" value="${u?escapeHtml(u.name):''}" placeholder="مثلاً مدیر هتل بهار"></div>
+    <div class="field"><label>شماره موبایل</label><input id="mgPhone" value="${u?u.phone:''}" ${editing?'readonly style="background:#f0efea;"':''} placeholder="09xxxxxxxxx"></div>
+    <div class="field"><label>رمز عبور</label><input id="mgPass" value="${u?escapeHtml(u.pass):''}" placeholder="رمز عبور مدیر"></div>
+    <div class="error-msg" id="mgError"></div>
+    <button class="btn btn-primary" style="margin-top:8px;" onclick="saveManager('${phone||''}')">${editing?'ذخیره تغییرات':'ثبت مدیر'}</button>
+    ${editing ? `<button class="btn btn-danger" style="margin-top:8px;" onclick="deleteManager('${phone}')">حذف مدیر</button>` : ''}
+  `;
+  document.getElementById('modalBg').classList.add('active');
+}
+function saveManager(phone){
+  const name = document.getElementById('mgName').value.trim();
+  const mgPhone = document.getElementById('mgPhone').value.trim();
+  const pass = document.getElementById('mgPass').value.trim();
+  const err = document.getElementById('mgError');
+  err.style.display='none';
+  if(!name || !/^09\d{9}$/.test(mgPhone) || !pass || pass.length<4){
+    err.textContent='نام، شماره موبایل معتبر و رمز عبور (حداقل ۴ کاراکتر) را وارد کنید.'; err.style.display='block'; return;
+  }
+  if(phone){
+    const u = DB.users.find(x=>x.phone===phone && x.role==='manager');
+    if(u){ u.name=name; u.pass=pass; }
+  } else {
+    if(DB.users.find(x=>x.phone===mgPhone)){ err.textContent='این شماره قبلاً ثبت شده است.'; err.style.display='block'; return; }
+    DB.users.push({ phone:mgPhone, pass, role:'manager', name });
+  }
+  saveDB(DB);
+  closeModal();
+  toast('مدیر هتل ذخیره شد');
+  renderAdmin();
+}
+function deleteManager(phone){
+  if(!DB.users.find(x=>x.phone===phone && x.role==='manager')) return;
+  DB.users = DB.users.filter(x=>!(x.phone===phone && x.role==='manager'));
+  saveDB(DB);
+  closeModal();
+  toast('مدیر هتل حذف شد');
+  renderAdmin();
+}
+
+/* ============================================================
+   PWA — نصب برنامه (نسخه‌ی مقاوم و کامل)
+============================================================ */
+let deferredPrompt = null;
+let appInstalled = (function(){ try{ return localStorage.getItem('jaju_installed')==='1'; }catch(e){ return false; } })();
+
+function isStandalone(){
+  try{
+    return window.matchMedia('(display-mode: standalone)').matches ||
+           window.matchMedia('(display-mode: fullscreen)').matches ||
+           window.matchMedia('(display-mode: minimal-ui)').matches ||
+           window.navigator.standalone === true;
+  }catch(e){ return false; }
+}
+function isAppleDevice(){
+  return /iphone|ipad|ipod/i.test(navigator.userAgent || '');
+}
+
+const ipEl = () => document.getElementById('installPrompt');
+const ipInstallBtn = document.getElementById('ipInstallBtn');
+const ipHelpBtn = document.getElementById('ipHelpBtn');
+function hideInstallPrompt(){ if(ipEl()) ipEl().classList.remove('show'); }
+
+// آیا دکمه‌ی «نصب برنامه» می‌تواند نصب خودکار انجام دهد؟
+function canAutoInstall(){ return !!deferredPrompt; }
+
+function refreshInstallButtons(){
+  if(!ipHelpBtn) return;
+  ipHelpBtn.style.display = canAutoInstall() ? 'none' : 'inline-flex';
+}
+
+// نمایش بنر نصب؛ همیشه وقتی برنامه هنوز نصب نشده و حالت standalone نیست
+function showInstallBanner(){
+  if(!ipEl()) return;
+  if(appInstalled || isStandalone()) return;
+  refreshInstallButtons();
+  ipEl().classList.add('show');
+}
+
+// گرفتن prompt واقعی مرورگر (فقط در مرورگرهای پشتیبان‌کننده صادر می‌شود)
+window.addEventListener('beforeinstallprompt', (e)=>{
+  e.preventDefault();      // باید حتماً پیش از ذخیره‌سازی preventDefault بزنیم
+  deferredPrompt = e;
+  refreshInstallButtons();
+  showInstallBanner();
+});
+
+// دکمه‌ی «نصب برنامه»
+ipInstallBtn.addEventListener('click', async ()=>{
+  // ۱) اگر prompt مرورگر داریم، نصب خودکار را اجرا کن
+  if(deferredPrompt){
+    try{
+      deferredPrompt.prompt();
+      const res = await deferredPrompt.userChoice;
+      deferredPrompt = null;
+      refreshInstallButtons();
+      if(res && res.outcome === 'accepted'){
+        onAppInstalled();
+        return;
+      }
+      // کاربر در پنجره‌ی مرورگر انصراف داد یا پنجره دیده نشد
+      openInstallHelp('اگر پنجره‌ی نصب مرورگر دیده نشد، از این راهنمای ساده استفاده کنید.');
+      return;
+    }catch(err){
+      deferredPrompt = null;
+      refreshInstallButtons();
+    }
+  }
+  // ۲) اگر نصب خودکار در دسترس نبود، راهنمای دستی را نشان بده
+  openInstallHelp();
+});
+
+// دکمه‌ی «راهنمای نصب»
+ipHelpBtn.addEventListener('click', ()=> openInstallHelp());
+
+// «بعداً» — بنر را همین حالا مخفی کن؛ در ورود بعدی دوباره می‌پرسد
+document.getElementById('ipLaterBtn').addEventListener('click', hideInstallPrompt);
+
+// وقتی مرورگر نصب را کامل کرد
+function onAppInstalled(){
+  appInstalled = true;
+  try{ localStorage.setItem('jaju_installed','1'); }catch(e){}
+  hideInstallPrompt();
+  toast('جاجو با موفقیت روی گوشی شما نصب شد 🎉');
+}
+window.addEventListener('appinstalled', onAppInstalled);
+
+// راهنمای گام‌به‌گام نصب دستی (پشتیبان برای همه‌ی مرورگرها/موبایل‌ها)
+function openInstallHelp(note){
+  const ios = isAppleDevice();
+  const steps = ios ? [
+    '۱. دکمه‌ی «اشتراک‌گذاری» (آیکون ⬆️ در نوار پایین سافاری) را بزنید.',
+    '۲. گزینه‌ی «افزودن به صفحه‌ی اصلی» (Add to Home Screen) را انتخاب کنید.',
+    '۳. روی «افزودن» بزنید تا آیکون جاجو روی گوشی شما نصب شود.'
+  ] : [
+    '۱. سه‌نقطه‌ی (⋮) بالای مرورگر کروم را بزنید.',
+    '۲. گزینه‌ی «نصب برنامه» / «Install app» را انتخاب کنید.',
+    '۳. روی «نصب» بزنید تا جاجو مثل یک اپ واقعی نصب شود.'
+  ];
+  document.getElementById('modalBody').innerHTML = `
+    <div class="modal-head">
+      <h3>نصب برنامه جاجو</h3>
+      <button class="close-x" onclick="closeModal()">×</button>
+    </div>
+    ${note ? `<div class="hint-msg">${note}</div>` : ''}
+    <div class="hint-msg">نصب خودکار در این مرورگر در دسترس نیست؛ در چند ثانیه به‌صورت دستی نصب کنید:</div>
+    <ol style="line-height:2;font-size:14px;padding-right:20px;margin:6px 0;">
+      ${steps.map(s=>`<li>${s}</li>`).join('')}
+    </ol>
+    <button class="btn btn-primary" style="margin-top:10px;" onclick="closeModal()">متوجه شدم</button>
+  `;
+  document.getElementById('modalBg').classList.add('active');
+}
+
+// دکمه‌ی ثابت «نصب برنامه» در بخش حساب
+function installNow(){
+  if(appInstalled || isStandalone()){ toast('جاجو قبلاً روی این دستگاه نصب شده است ✅'); return; }
+  if(canAutoInstall()){ ipInstallBtn.click(); return; }
+  openInstallHelp();
+}
+
+// با تأخیر کوتاه، هر بار که کاربر وارد سایت می‌شود بپرس (اگر هنوز نصب نشده)
+setTimeout(showInstallBanner, 2500);
+
+/* ============================================================
+   شروع برنامه
+============================================================ */
+setDateValue('searchCheckin', todayStr());
+setDateValue('searchCheckout', addDays(todayStr(),1));
+
+renderHomeList();
+updateUserChip();
+</script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a2d23b0f5b5ed2c9',t:'MTc4NzA2OTg2Nw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
